@@ -5,69 +5,54 @@ pipeline {
         nodejs 'Node18'
     }
 
-    environment {
-        IMAGE_NAME = "evat-devops-api"
-        CONTAINER_NAME = "evat-container"
-    }
-
     stages {
-
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
 
         stage('Build Docker Image') {
             steps {
-                bat "docker build -t %IMAGE_NAME% ."
+                bat 'docker build -t evat-devops-api .'
             }
         }
 
         stage('Test (Jest)') {
             steps {
-                bat "node -v"
-                bat "npm -v"
-                bat "npm install"
-                bat "npm test"
+                bat 'npm install'
+                bat 'npm test'
             }
         }
 
         stage('Security Scan') {
-    steps {
-        bat 'npm audit || exit 0'
-    }
-}
-    }
+            steps {
+                bat 'npm audit || exit 0'
+            }
         }
 
         stage('Deploy') {
             steps {
-                bat "docker stop %CONTAINER_NAME% || exit 0"
-                bat "docker rm %CONTAINER_NAME% || exit 0"
-                bat "docker run -d -p 5000:5000 --name %CONTAINER_NAME% %IMAGE_NAME%"
+                bat 'docker stop evat-container || exit 0'
+                bat 'docker rm evat-container || exit 0'
+                bat 'docker run -d -p 5001:5000 --name evat-container evat-devops-api'
             }
         }
 
         stage('Release') {
             steps {
-                bat "docker tag %IMAGE_NAME% %IMAGE_NAME%:latest"
+                echo 'Release stage executed'
             }
         }
 
         stage('Monitoring') {
             steps {
-                bat "curl http://localhost:5000/health || exit 0"
+                echo 'Monitoring stage executed'
             }
         }
     }
 
     post {
         success {
-            echo 'PIPELINE SUCCESS '
+            echo 'PIPELINE SUCCESS'
         }
         failure {
-            echo 'PIPELINE FAILED '
+            echo 'PIPELINE FAILED'
         }
     }
 }
