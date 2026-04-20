@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'Node18'
+    }
+
     environment {
         IMAGE_NAME = "evat-devops-api"
         CONTAINER_NAME = "evat-container"
@@ -14,16 +18,16 @@ pipeline {
             }
         }
 
-        stage('Build - Docker Image') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Building Docker Image...'
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Test - Jest') {
+        stage('Test (Jest)') {
             steps {
-                echo 'Running Tests...'
+                sh 'node -v'
+                sh 'npm -v'
                 sh 'npm install'
                 sh 'npm test'
             }
@@ -31,14 +35,12 @@ pipeline {
 
         stage('Security Scan') {
             steps {
-                echo 'Running Security Scan (Trivy)...'
                 sh 'trivy image $IMAGE_NAME || true'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploying Container...'
                 sh 'docker stop $CONTAINER_NAME || true'
                 sh 'docker rm $CONTAINER_NAME || true'
                 sh 'docker run -d -p 5000:5000 --name $CONTAINER_NAME $IMAGE_NAME'
@@ -47,14 +49,12 @@ pipeline {
 
         stage('Release') {
             steps {
-                echo 'Tagging Image...'
                 sh 'docker tag $IMAGE_NAME $IMAGE_NAME:latest'
             }
         }
 
         stage('Monitoring') {
             steps {
-                echo 'Checking Health Endpoint...'
                 sh 'curl http://localhost:5000/health || true'
             }
         }
@@ -62,10 +62,10 @@ pipeline {
 
     post {
         success {
-            echo 'Pipeline Success '
+            echo 'PIPELINE SUCCESS 🎉'
         }
         failure {
-            echo 'Pipeline Failed '
+            echo 'PIPELINE FAILED ❌'
         }
     }
 }
