@@ -34,9 +34,16 @@ pipeline {
         }
 
         stage('Security Scan') {
-            steps {
-                bat "trivy image %IMAGE_NAME% || exit 0"
-            }
+    steps {
+        bat '''
+        where trivy >nul 2>nul
+        IF %ERRORLEVEL% EQU 0 (
+            trivy image evat-devops-api
+        ) ELSE (
+            echo Trivy not installed, skipping security scan
+        )
+        '''
+    }
         }
 
         stage('Deploy') {
