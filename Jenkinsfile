@@ -20,52 +20,52 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                bat "docker build -t %IMAGE_NAME% ."
             }
         }
 
         stage('Test (Jest)') {
             steps {
-                sh 'node -v'
-                sh 'npm -v'
-                sh 'npm install'
-                sh 'npm test'
+                bat "node -v"
+                bat "npm -v"
+                bat "npm install"
+                bat "npm test"
             }
         }
 
         stage('Security Scan') {
             steps {
-                sh 'trivy image $IMAGE_NAME || true'
+                bat "trivy image %IMAGE_NAME% || exit 0"
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker stop $CONTAINER_NAME || true'
-                sh 'docker rm $CONTAINER_NAME || true'
-                sh 'docker run -d -p 5000:5000 --name $CONTAINER_NAME $IMAGE_NAME'
+                bat "docker stop %CONTAINER_NAME% || exit 0"
+                bat "docker rm %CONTAINER_NAME% || exit 0"
+                bat "docker run -d -p 5000:5000 --name %CONTAINER_NAME% %IMAGE_NAME%"
             }
         }
 
         stage('Release') {
             steps {
-                sh 'docker tag $IMAGE_NAME $IMAGE_NAME:latest'
+                bat "docker tag %IMAGE_NAME% %IMAGE_NAME%:latest"
             }
         }
 
         stage('Monitoring') {
             steps {
-                sh 'curl http://localhost:5000/health || true'
+                bat "curl http://localhost:5000/health || exit 0"
             }
         }
     }
 
     post {
         success {
-            echo 'PIPELINE SUCCESS 🎉'
+            echo 'PIPELINE SUCCESS '
         }
         failure {
-            echo 'PIPELINE FAILED ❌'
+            echo 'PIPELINE FAILED '
         }
     }
 }
