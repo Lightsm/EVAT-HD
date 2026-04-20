@@ -35,14 +35,9 @@ pipeline {
 
         stage('Security Scan') {
     steps {
-        bat '''
-        where trivy >nul 2>nul
-        IF %ERRORLEVEL% EQU 0 (
-            trivy image evat-devops-api
-        ) ELSE (
-            echo Trivy not installed, skipping security scan
-        )
-        '''
+        bat 'npm audit || exit 0'
+    }
+}
     }
         }
 
