@@ -28,28 +28,26 @@ pipeline {
         }
 
                 stage('Code Analysis (SonarQube)') {
-                        steps {
-                                // If `sonar-scanner` is not on PATH, download a Windows CLI and run it from workspace
-                                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                                        bat """
-                                        powershell -NoProfile -Command "
-                                            $token = '%SONAR_TOKEN%';
-                                            if (-not (Get-Command sonar-scanner -ErrorAction SilentlyContinue)) {
-                                                Write-Output 'sonar-scanner not found — downloading scanner...';
-                                                Invoke-WebRequest -Uri 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-windows.zip' -OutFile 'sonar-scanner.zip';
-                                                Expand-Archive -Path 'sonar-scanner.zip' -DestinationPath '.\\.sonar' -Force;
-                                                $dir = Get-ChildItem -Path '.\\.sonar' -Directory | Select-Object -First 1;
-                                                $scanner = Join-Path $dir.FullName 'bin\\sonar-scanner.bat';
-                                                & $scanner -Dsonar.projectKey=evat-project -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000 -Dsonar.login=$token;
-                                            } else {
-                                                Write-Output 'sonar-scanner found on PATH';
-                                                sonar-scanner -Dsonar.projectKey=evat-project -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000 -Dsonar.login=$token;
-                                            }
-                                        "
-                                        """
-                                }
-                        }
-                }
+    steps {
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            bat """
+            if not exist sonar-scanner (
+                echo Downloading SonarScanner...
+                powershell -Command "Invoke-WebRequest -Uri https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-windows.zip -OutFile sonar.zip"
+                powershell -Command "Expand-Archive -Path sonar.zip -DestinationPath . -Force"
+            )
+
+            for /d %%i in (sonar-scanner-*) do set SCANNER=%%i
+
+            %%SCANNER%%\\bin\\sonar-scanner.bat ^
+            -Dsonar.projectKey=evat-project ^
+            -Dsonar.sources=. ^
+            -Dsonar.host.url=http://localhost:9000 ^
+            -Dsonar.login=%SONAR_TOKEN%
+            """
+        }
+    }
+}
 
         stage('Security Scan (npm audit)') {
             steps {
