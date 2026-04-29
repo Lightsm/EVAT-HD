@@ -27,20 +27,29 @@ pipeline {
             }
         }
 
-        stage('Code Analysis (SonarQube)') {
-            steps {
-                // calling sonar-scanner directly so job doesn't require the SonarQube Jenkins plugin
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    bat """
-                    sonar-scanner ^
-                    -Dsonar.projectKey=evat-project ^
-                    -Dsonar.sources=. ^
-                    -Dsonar.host.url=http://localhost:9000 ^
-                    -Dsonar.login=%SONAR_TOKEN%
-                    """
+                stage('Code Analysis (SonarQube)') {
+                        steps {
+                                // If `sonar-scanner` is not on PATH, download a Windows CLI and run it from workspace
+                                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                                        bat """
+                                        powershell -NoProfile -Command "
+                                            $token = '%SONAR_TOKEN%';
+                                            if (-not (Get-Command sonar-scanner -ErrorAction SilentlyContinue)) {
+                                                Write-Output 'sonar-scanner not found — downloading scanner...';
+                                                Invoke-WebRequest -Uri 'https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-windows.zip' -OutFile 'sonar-scanner.zip';
+                                                Expand-Archive -Path 'sonar-scanner.zip' -DestinationPath '.\\.sonar' -Force;
+                                                $dir = Get-ChildItem -Path '.\\.sonar' -Directory | Select-Object -First 1;
+                                                $scanner = Join-Path $dir.FullName 'bin\\sonar-scanner.bat';
+                                                & $scanner -Dsonar.projectKey=evat-project -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000 -Dsonar.login=$token;
+                                            } else {
+                                                Write-Output 'sonar-scanner found on PATH';
+                                                sonar-scanner -Dsonar.projectKey=evat-project -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000 -Dsonar.login=$token;
+                                            }
+                                        "
+                                        """
+                                }
+                        }
                 }
-            }
-        }
 
         stage('Security Scan (npm audit)') {
             steps {
