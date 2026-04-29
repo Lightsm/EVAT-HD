@@ -30,9 +30,10 @@ pipeline {
         withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
             bat '''
             npx sonar-scanner ^
-            -Dsonar.projectKey=evat-project ^
+            -Dsonar.projectKey=evat-hd ^
+            -Dsonar.organization=lightsm ^
             -Dsonar.sources=. ^
-            -Dsonar.host.url=http://localhost:9000 ^
+            -Dsonar.host.url=https://sonarcloud.io ^
             -Dsonar.login=%SONAR_TOKEN%
             '''
         }
