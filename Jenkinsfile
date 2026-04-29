@@ -26,22 +26,16 @@ pipeline {
         }
 
         stage('Code Analysis (SonarQube)') {
-            steps {
-                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
-                    bat """
-                    if not exist .sonar (
-                        echo Downloading SonarScanner...
-                        powershell -Command "Invoke-WebRequest -Uri https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-windows.zip -OutFile sonar.zip"
-                        powershell -Command "Expand-Archive -Path sonar.zip -DestinationPath .sonar -Force"
-                    )
-
-                    powershell -Command ^
-                    "$scanner = Get-ChildItem -Path .sonar -Recurse -Filter sonar-scanner.bat | Select-Object -First 1; ^
-                     & $scanner.FullName -Dsonar.projectKey=evat-project -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000 -Dsonar.login=%SONAR_TOKEN%"
-                    """
-                }
-            }
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            bat """
+            sonar-scanner ^
+            -Dsonar.projectKey=evat-project ^
+            -Dsonar.sources=.
+            """
         }
+    }
+}
 
         stage('Security Scan (npm audit)') {
             steps {
