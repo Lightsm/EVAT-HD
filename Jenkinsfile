@@ -27,15 +27,14 @@ pipeline {
 
         stage('Code Analysis (SonarQube)') {
     steps {
-        script {
-            def scannerHome = tool 'SonarScanner'
-            withSonarQubeEnv('SonarQube') {
-                bat """
-                ${scannerHome}\\bin\\sonar-scanner.bat ^
-                -Dsonar.projectKey=evat-project ^
-                -Dsonar.sources=.
-                """
-            }
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            bat '''
+            npx sonar-scanner ^
+            -Dsonar.projectKey=evat-project ^
+            -Dsonar.sources=. ^
+            -Dsonar.host.url=http://localhost:9000 ^
+            -Dsonar.login=%SONAR_TOKEN%
+            '''
         }
     }
 }
