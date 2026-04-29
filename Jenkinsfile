@@ -5,9 +5,7 @@ pipeline {
         nodejs 'Node18'
     }
 
-    environment {
-        SONAR_SCANNER_HOME = tool 'SonarScanner'
-    }
+    // SONAR_SCANNER_HOME removed to avoid failing when Jenkins tool isn't configured
 
     stages {
 
@@ -34,7 +32,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         bat """
-                        %SONAR_SCANNER_HOME%\\bin\\sonar-scanner.bat ^
+                        sonar-scanner ^
                         -Dsonar.projectKey=evat-project ^
                         -Dsonar.sources=. ^
                         -Dsonar.host.url=http://localhost:9000 ^
